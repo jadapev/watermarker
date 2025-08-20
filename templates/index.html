@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Videos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        
+        .upload-zone {
+            border: 3px dashed #667eea;
+            border-radius: 20px;
+            background: rgba(102, 126, 234, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .upload-zone:hover {
+            border-color: #764ba2;
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .upload-zone.drag-over {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.15);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 4rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-gradient {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-secondary-gradient {
+            background: var(--secondary-gradient);
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-weight: 600;
+            padding: 10px 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+            color: white;
+        }
+        
+        .video-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: none;
+            overflow: hidden;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .progress-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .progress {
+            height: 12px;
+            border-radius: 10px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            background: var(--success-gradient);
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+        
+        .status-badge {
+            background: var(--success-gradient);
+            color: white;
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .file-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            color: #2d3748;
+            font-weight: 700;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .section-header::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 50px;
+            height: 4px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+        
+        video {
+            border-radius: 15px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feature-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .processing-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .comparison-container {
+            position: relative;
+        }
+        
+        .vs-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 3px solid #667eea;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #667eea;
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="display-4 fw-bold mb-3" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                <i class="fas fa-video me-3"></i>Convertidor de Videos
+            </h1>
+            <p class="lead text-muted">Sube tu video o un paquete ZIP y obtén resultados increíbles.</p>
+        </div>
+
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8">
+                <div class="card video-card">
+                    <div class="card-body p-4">
+                        <h3 class="section-header text-center">
+                            <i class="fas fa-cloud-upload-alt me-2"></i>Subir Archivos
+                        </h3>
+                        
+                        <form action="/" method="post" enctype="multipart/form-data" id="uploadForm">
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Tipo de subida</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="upload_type" id="upload_single" value="single" checked>
+                                    <label class="form-check-label" for="upload_single">Un solo video</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="upload_type" id="upload_zip" value="zip">
+                                    <label class="form-check-label" for="upload_zip">Archivo ZIP</label>
+                                </div>
+                            </div>
+
+                            <div id="single_video_upload" class="mb-4">
+                                <label for="video_file" class="form-label fw-bold">Video a procesar</label>
+                                <input type="file" class="form-control" id="video_file" name="video_file" accept="video/*" required>
+                            </div>
+                            
+                            <div id="zip_upload" class="mb-4 d-none">
+                                <label for="zip_file" class="form-label fw-bold">Archivo ZIP con videos</label>
+                                <input type="file" class="form-control" id="zip_file" name="zip_file" accept=".zip" required>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="watermark_file" class="form-label fw-bold">Imagen de marca de agua</label>
+                                <input type="file" class="form-control" id="watermark_file" name="watermark_file" accept="image/*" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="transparency" class="form-label fw-bold">Opacidad de la marca de agua</label>
+                                <input type="range" class="form-range" id="transparency" name="transparency" min="0.0" max="1.0" step="0.1" value="0.5">
+                                <div class="d-flex justify-content-between small text-muted mt-2">
+                                    <span>0% (Invisible)</span>
+                                    <span>50% (Predeterminado)</span>
+                                    <span>100% (Opaco)</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Posición de la marca de agua</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="position" id="pos_top_left" value="top_left" checked>
+                                        <label class="form-check-label" for="pos_top_left">Superior Izquierda</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="position" id="pos_top_right" value="top_right">
+                                        <label class="form-check-label" for="pos_top_right">Superior Derecha</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="position" id="pos_bottom_left" value="bottom_left">
+                                        <label class="form-check-label" for="pos_bottom_left">Inferior Izquierda</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="position" id="pos_bottom_right" value="bottom_right">
+                                        <label class="form-check-label" for="pos_bottom_right">Inferior Derecha</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="position" id="pos_center" value="center">
+                                        <label class="form-check-label" for="pos_center">Centro</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-gradient">
+                                    <i class="fas fa-magic me-2"></i>Procesar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-center video-card p-4">
+                    <div class="modal-body">
+                        <div class="processing-animation mb-3">
+                            <i class="fas fa-cog fa-spin fa-4x" style="color: #667eea;"></i>
+                        </div>
+                        <h4 class="mb-2">Procesando tus archivos...</h4>
+                        <p class="text-muted">Por favor, espera. Esto podría tomar unos minutos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if download_link %}
+        <div class="row justify-content-center mb-5" id="resultsSection">
+            <div class="col-12 text-center mb-4">
+                <span class="status-badge">
+                    <i class="fas fa-check-circle me-2"></i>Procesamiento Completado
+                </span>
+            </div>
+            
+            {% if is_zip %}
+            <div class="col-lg-6 text-center">
+                <h3 class="mb-4">Descarga tus videos procesados</h3>
+                <a href="{{ download_link }}" class="btn btn-gradient mt-4" download>
+                    <i class="fas fa-file-archive me-2"></i>Descargar ZIP
+                </a>
+            </div>
+            {% else %}
+            <div class="col-lg-6 text-center">
+                <h3 class="mb-4">Tu video procesado</h3>
+                <video controls autoplay muted>
+                    <source src="{{ download_link }}" type="video/mp4">
+                    Tu navegador no soporta el tag de video.
+                </video>
+                <a href="{{ download_link }}" class="btn btn-gradient mt-4" download>
+                    <i class="fas fa-download me-2"></i>Descargar Video
+                </a>
+            </div>
+            {% endif %}
+            
+        </div>
+        {% endif %}
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadForm = document.getElementById('uploadForm');
+        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+        const uploadTypeRadios = document.querySelectorAll('input[name="upload_type"]');
+        const singleVideoUpload = document.getElementById('single_video_upload');
+        const zipUpload = document.getElementById('zip_upload');
+
+        function toggleRequiredAttributes(type) {
+            if (type === 'single') {
+                singleVideoUpload.querySelector('input').setAttribute('required', 'required');
+                zipUpload.querySelector('input').removeAttribute('required');
+            } else {
+                singleVideoUpload.querySelector('input').removeAttribute('required');
+                zipUpload.querySelector('input').setAttribute('required', 'required');
+            }
+        }
+        
+        uploadTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'single') {
+                    singleVideoUpload.classList.remove('d-none');
+                    zipUpload.classList.add('d-none');
+                    toggleRequiredAttributes('single');
+                } else {
+                    singleVideoUpload.classList.add('d-none');
+                    zipUpload.classList.remove('d-none');
+                    toggleRequiredAttributes('zip');
+                }
+            });
+        });
+        
+        // Llamar a la función al cargar la página para establecer el estado inicial
+        toggleRequiredAttributes('single');
+        
+        uploadForm.addEventListener('submit', function(event) {
+            loadingModal.show();
+        });
+    });
+</script>
+</body>
+</html>
